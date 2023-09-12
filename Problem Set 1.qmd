@@ -1,0 +1,393 @@
+---
+title: "Untitled"
+format: html
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+options(repos = c(CRAN = "https://cran.r-project.org"))
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+Question 1
+```{r}
+# (a)
+install.packages("readr")
+library(readr)
+zip_file <- "C:/Users/mengy/Downloads/wine.zip"
+extract_folder <- "E:/wine"
+unzip(zip_file, exdir = extract_folder)
+```
+
+```{r}
+# (a)
+wine <- read.table("E:/wine/wine.data", header = FALSE, sep = ",")
+colnames(wine)<-c("class", "Alcohol", "Malic acid", "Ash", "Alcalinity of ash", "Magnesium", "Total phenols", "Flavanoids", "Nonflavanoid phenols", "Proanthocyanins", "Color intensity", "Hue", "OD280/OD315 of diluted wines", "Proline")
+```
+
+```{r}
+# (b)
+observation_counts <- table(wine$class)
+observation_counts
+```
+
+```{r}
+# (c).1
+max_alcohol <- which.max(wine$Alcohol)
+max_alcohol_observation <- wine[max_alcohol, ]
+max_alcohol_observation
+max_alcohol_class <- max_alcohol_observation$class
+max_alcohol_class
+# (c).2
+min_alcohol <- which.min(wine$Alcohol)
+min_alcohol_observation <- wine[min_alcohol, ]
+min_alcohol_observation
+min_alcohol_class <- min_alcohol_observation$class
+min_alcohol_class
+# (c).3
+length(which(wine$Magnesium>114))
+# (c).4
+class<-unique(wine$class)
+class
+count_class<-length(class)
+count_class
+counts_of_higher_than_german_in_each_class <- numeric(count_class)
+for (i in 1:count_class){
+  subset<-wine$Magnesium[wine$class == class[i]]
+  counts_of_higher_than_german_in_each_class[i]<-length(which(subset > 114))
+}
+print(counts_of_higher_than_german_in_each_class)
+```
+
+```{r}
+# (d)
+table_0 <- data.frame(
+  "Variable" = colnames(wine)[2:14],  
+  "All Observations" = colMeans(wine[, 2:14]),  
+  "Category 1" = colMeans(wine[wine$class == 1, 2:14]),  
+  "Category 2" = colMeans(wine[wine$class == 2, 2:14]),  
+  "Category 3" = colMeans(wine[wine$class == 3, 2:14])   
+)
+table_1<-table_0[, -1]
+table<-t(table_1)
+table
+```
+
+```{r}
+# (e)
+Ash_1<-wine$Ash[wine$class==1]
+Ash_2<-wine$Ash[wine$class==2]
+Ash_3<-wine$Ash[wine$class==3]
+t.test(Ash_1, Ash_2)
+t.test(Ash_1, Ash_3)
+t.test(Ash_2, Ash_3)
+# The p-value is 2.124e-05 < 0.05, which suggests strong evidence against the null hypothesis. This means there is a significant difference in means between Ash_1 and Ash_2.
+#  The p-value is 0.643 > 0.05, which suggests weak evidence against the null hypothesis. This means there is no significant difference in means between Ash_1 and Ash_3.
+#  The p-value is 5.627e-05 < 0.05, which suggests strong evidence against the null hypothesis. This means there is a significant difference in means between Ash_2 and Ash_3.
+```
+
+Question 2
+```{r}
+# (a)
+isPerfectPower <- function(n, power) {
+  r <- 2 
+  isPerfect <- FALSE
+  root <- n^(1/power)
+  
+  while (n >= r^power) {
+    if (n == r^power) {
+      isPerfect <- TRUE
+      root <- r
+      break
+    }
+    r <- r + 1 
+  }
+  return(list(isPerfect = isPerfect, root = root))
+}
+```
+
+```{r}
+# (b)
+findRootPower <- function(n) {
+  for (i in 2:50) {
+    result <- isPerfectPower(n, power = i)
+    if (result$isPerfect == TRUE) {
+      return(paste(n, "=", result$root, "^", i))
+    }
+  }
+  return(NULL) 
+}
+
+findRootPower(27)
+findRootPower(13060694016)
+findRootPower(7776)
+findRootPower(170859375)
+findRootPower(58247422)
+findRootPower(94143178827)
+```
+
+Question 3
+```{r}
+# (a)
+identify_poker_hand <- function(suits, ranks) {
+  if (length(unique(suits)) == 1 && max(table(ranks)) == 1 && max(ranks) - min(ranks) == 4) {
+    if (max(ranks) == 14) {
+      return("Royal Flush")
+    } else {
+      return("Straight Flush")
+    }
+  } else if (max(table(ranks)) == 4) {
+    return("Four of a Kind")
+  } else if (max(table(ranks)) == 3 && sum(table(ranks) == 2) == 1) {
+    return("Full House")
+  } else if (length(unique(suits)) == 1) {
+    return("Flush")
+  } else if (max(ranks) - min(ranks) == 4 ) {
+    return("Straight")
+  } else if (max(table(ranks)) == 3) {
+    return("Three of a Kind")
+  } else if (sum(table(ranks) == 2) == 2) {
+    return("Two Pair")
+  } else if (sum(table(ranks) == 2) == 1) {
+    return("One Pair")
+  } else {
+    return("High Card")
+  }
+}
+
+
+simulate_poker_round <- function(num_players) {
+  if (num_players < 2 || num_players > 10) {
+    cat("Number of players should be between 2 and 10.\n")
+    return(NULL)
+  }
+  ranks <- c(2:10, "J", "Q", "K", "A")
+  suits <- c("Hearts", "Diamonds", "Clubs", "Spades")
+  deck <- expand.grid(Rank = ranks, Suit = suits)
+  deck <- deck[sample(nrow(deck)), ]
+  hands <- list()
+  for (i in 1:num_players) {
+    player_hand <- deck[((i - 1) * 5 + 1):(i * 5), ]
+    hands[[i]] <- player_hand
+    cat("Player", i, "Hand:", "\n")
+    print(player_hand)
+    cat("Hand Name:", identify_poker_hand(player_hand$Suit, player_hand$Rank), "\n\n")
+  }
+}
+```
+
+```{r}
+# (b)
+
+identify_poker_hand <- function(suits, ranks) {
+  face_card_mapping <- c(A = 1, J = 11, Q = 12, K = 13, "10" = 10)
+  if (all(ranks %in% names(face_card_mapping))) {
+    ranks <- sapply(ranks, function(x) if (x == "A") 14 else face_card_mapping[x])
+  } else {
+    ranks <- as.numeric(ranks)
+  }
+  if (length(unique(suits)) == 1 && max(table(ranks)) == 1 && max(ranks) - min(ranks) == 4) {
+    if (max(ranks) == 14) {
+      return("Royal Flush")
+    } else {
+      return("Straight Flush")
+    }
+  } else if (max(table(ranks)) == 4) {
+    return("Four of a Kind")
+  } else if (max(table(ranks)) == 3 && sum(table(ranks) == 2) == 1) {
+    return("Full House")
+  } else if (length(unique(suits)) == 1) {
+    return("Flush")
+  } else if (max(ranks) - min(ranks) == 4) {
+    return("Straight")
+  } else if (max(table(ranks)) == 3) {
+    return("Three of a Kind")
+  } else if (sum(table(ranks) == 2) == 2) {
+    return("Two Pair")
+  } else if (sum(table(ranks) == 2) == 1) {
+    return("Pair")
+  } else {
+    return("High Card")
+  }
+}
+
+
+simulate_poker_round <- function(num_players) {
+  if (num_players < 2 || num_players > 10) {
+    cat("Number of players should be between 2 and 10.\n")
+    return(NULL)
+  }
+  ranks <- c(2:10, "J", "Q", "K", "A")
+  suits <- c("Hearts", "Diamonds", "Clubs", "Spades")
+  deck <- expand.grid(Rank = ranks, Suit = suits)
+  deck <- deck[sample(nrow(deck)), ]
+  hands <- list()
+  for (i in 1:num_players) {
+    player_hand <- deck[((i - 1) * 5 + 1):(i * 5), ]
+    hands[[i]] <- player_hand
+    cat("Player", i, "Hand:", "\n")
+    print(player_hand)
+    cat("Hand Name:", identify_poker_hand(player_hand$Suit, player_hand$Rank), "\n\n")
+  }
+}
+simulate_poker_round(3)
+```
+
+```{r}
+# (c)
+# This function takes in a vector of suits and a vector of ranks representing a 5-card hand, and return the name of the hand (in 5 card stud poker).
+identify_poker_hand <- function(suits, ranks) {
+  face_card_mapping <- c(A = 1, J = 11, Q = 12, K = 13, "10" = 10) #Assign letters in ranks to numbers to facilitate arithmetic operations
+  if (all(ranks %in% names(face_card_mapping))) {
+    ranks <- sapply(ranks, function(x) if (x == "A") 14 else face_card_mapping[x]) #Considering the royal flush situation, reassign A to 14
+  } else {
+    ranks <- as.numeric(ranks)
+  }
+  if (length(unique(suits)) == 1 && max(table(ranks)) == 1 && max(ranks) - min(ranks) == 4) {
+    if (max(ranks) == 14) {
+      return("Royal Flush") #check for Royal Flush
+    } else {
+      return("Straight Flush") #check for Straight Flush
+    }
+  } else if (max(table(ranks)) == 4) {
+    return("Four of a Kind") #check for Four of a Kind
+  } else if (max(table(ranks)) == 3 && sum(table(ranks) == 2) == 1) {
+    return("Full House") #check for Full House
+  } else if (length(unique(suits)) == 1) {
+    return("Flush") #check for Flush
+  } else if (max(ranks) - min(ranks) == 4 ) {
+    return("Straight") #check for Straight
+  } else if (max(table(ranks)) == 3) {
+    return("Three of a Kind") #check for Three of a Kind
+  } else if (sum(table(ranks) == 2) == 2) {
+    return("Two Pair") #check for Two Pair
+  } else if (sum(table(ranks) == 2) == 1) {
+    return("Pair") #Check for Pair
+  } else {
+    return("High Card") #check for High Card
+  }
+}
+
+# The second function simulates dealing a round of cards in a game of poker (5 card stud)
+simulate_poker_round <- function(num_players) {
+  if (num_players < 2 || num_players > 10) {
+    cat("Number of players should be between 2 and 10.\n")
+    return(NULL) #Check if the number of players is within the valid range
+  }
+  ranks <- c(2:10, "J", "Q", "K", "A") #Define the ranks of a standard deck of cards
+  suits <- c("Hearts", "Diamonds", "Clubs", "Spades") #Define the suits of a standard deck of cards
+  deck <- expand.grid(Rank = ranks, Suit = suits) #Combine ranks and suits to create a deck of cards
+  deck <- deck[sample(nrow(deck)), ] #Shuffle the deck
+  hands <- list() #Define and form hands for all players
+  for (i in 1:num_players) {
+    player_hand <- deck[((i - 1) * 5 + 1):(i * 5), ] #Calculate the starting and ending position of the current player's hand in the deck.
+    hands[[i]] <- player_hand #store player i's hands as hands[[i]]
+    cat("Player", i, "Hand:", "\n") #Display the player's hand
+    print(player_hand)
+    cat("Hand Name:", identify_poker_hand(player_hand$Suit, player_hand$Rank), "\n\n")
+  }
+}
+
+set.seed(123)
+simulate_poker_round(4)
+```
+
+```{r}
+# (d)
+# When I test my function, I found that my function is not completely correct. When I set.seed(123), a hand with rank (6,3,2,4,4) and suit (Clubs, Diamonds,  Diamonds, Hearts, Spades) was generated. It should be a pair, but it was classified as a straight. So I improved my judgment conditions for straights.
+
+# This function takes in a vector of suits and a vector of ranks representing a 5-card hand, and return the name of the hand (in 5 card stud poker).
+identify_poker_hand <- function(suits, ranks) {
+  face_card_mapping <- c(A = 1, J = 11, Q = 12, K = 13, "10" = 10) #Assign letters in ranks to numbers to facilitate arithmetic operations
+  if (all(ranks %in% names(face_card_mapping))) {
+    ranks <- sapply(ranks, function(x) if (x == "A") 14 else face_card_mapping[x]) #Considering the royal flush situation, reassign A to 14
+  } else {
+    ranks <- as.numeric(ranks)
+  }
+  if (length(unique(suits)) == 1 && max(table(ranks)) == 1 && max(ranks) - min(ranks) == 4) {
+    if (max(ranks) == 14) {
+      return("Royal Flush") #check for Royal Flush
+    } else {
+      return("Straight Flush") #check for Straight Flush
+    }
+  } else if (max(table(ranks)) == 4) {
+    return("Four of a Kind") #check for Four of a Kind
+  } else if (max(table(ranks)) == 3 && sum(table(ranks) == 2) == 1) {
+    return("Full House") #check for Full House
+  } else if (length(unique(suits)) == 1) {
+    return("Flush") #check for Flush
+  } else if (max(ranks) - min(ranks) == 4 && length(unique(suits)) == 1 && length(unique(ranks) == 5)) {
+    return("Straight") #check for Straight
+  } else if (max(table(ranks)) == 3) {
+    return("Three of a Kind") #check for Three of a Kind
+  } else if (sum(table(ranks) == 2) == 2) {
+    return("Two Pair") #check for Two Pair
+  } else if (sum(table(ranks) == 2) == 1) {
+    return("Pair") #Check for Pair
+  } else {
+    return("High Card") #check for High Card
+  }
+}
+
+# The second function simulates dealing a round of cards in a game of poker (5 card stud)
+simulate_poker_round <- function(num_players) {
+  if (num_players < 2 || num_players > 10) {
+    cat("Number of players should be between 2 and 10.\n")
+    return(NULL) #Check if the number of players is within the valid range
+  }
+  ranks <- c(2:10, "J", "Q", "K", "A") #Define the ranks of a standard deck of cards
+  suits <- c("Hearts", "Diamonds", "Clubs", "Spades") #Define the suits of a standard deck of cards
+  deck <- expand.grid(Rank = ranks, Suit = suits) #Combine ranks and suits to create a deck of cards
+  deck <- deck[sample(nrow(deck)), ] #Shuffle the deck
+  hands <- list() #Define and form hands for all players
+  for (i in 1:num_players) {
+    player_hand <- deck[((i - 1) * 5 + 1):(i * 5), ] #Calculate the starting and ending position of the current player's hand in the deck.
+    hands[[i]] <- player_hand #store player i's hands as hands[[i]]
+    cat("Player", i, "Hand:", "\n") #Display the player's hand
+    print(player_hand)
+    cat("Hand Name:", identify_poker_hand(player_hand$Suit, player_hand$Rank), "\n\n")
+  }
+}
+
+set.seed(123)
+simulate_poker_round(4)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
